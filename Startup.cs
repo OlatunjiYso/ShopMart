@@ -32,6 +32,7 @@ namespace ShopMart
             services.AddControllers();
             services.AddDbContext<ShopMartContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                services.AddDatabaseDeveloperPageExceptionFilter();
             // services.AddSwaggerGen(c =>
             // {
             //     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ShopMart", Version = "v1" });
