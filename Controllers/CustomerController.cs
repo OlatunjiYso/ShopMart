@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopMart.Data;
+using ShopMart.DTO;
 using ShopMart.Models;
 
 namespace ShopMart.Controllers
@@ -23,14 +24,16 @@ namespace ShopMart.Controllers
 
         // GET: api/Customer
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
+        public async Task<ActionResult<IEnumerable<CustomerDTO>>> GetCustomers()
         {
-            return await _context.Customers.ToListAsync();
+            return await _context.Customers
+                .Select(x => customerToDTO(x))
+                .ToListAsync();
         }
 
         // GET: api/Customer/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(long id)
+        public async Task<ActionResult<CustomerDTO>> GetCustomer(long id)
         {
             var customer = await _context.Customers.FindAsync(id);
 
@@ -39,20 +42,29 @@ namespace ShopMart.Controllers
                 return NotFound();
             }
 
-            return customer;
+            return customerToDTO(customer);
         }
 
         // PUT: api/Customer/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(long id, Customer customer)
+        public async Task<IActionResult> PutCustomer(long id, CustomerDTO customerDTO)
         {
-            if (id != customer.CustomerId)
+            if (id != customerDTO.CustomerId)
             {
                 return BadRequest();
             }
 
-            _context.Entry(customer).State = EntityState.Modified;
+            // _context.Entry(customer).State = EntityState.Modified;
+            var customer = await _context.Customers.FindAsync(id);
+            if (customer == null)
+            {
+                return NotFound();
+            }
+
+            customer.FirstName = customerDTO.FirstName;
+            customer.LastName = customerDTO.LastName;
+            customer.Email = customerDTO.Email;
 
             try
             {
@@ -76,12 +88,17 @@ namespace ShopMart.Controllers
         // POST: api/Customer
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        public async Task<ActionResult<CustomerDTO>> PostCustomer(Customer customer)
         {
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customer);
+            return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customerToDTO(customer));
+
+        //    return CreatedAtAction(
+        //nameof(GetCustomer),
+        //new { customerId = customer.CustomerId },
+        //customerToDTO(customer));
         }
 
         // DELETE: api/Customer/5
@@ -103,6 +120,19 @@ namespace ShopMart.Controllers
         private bool CustomerExists(long id)
         {
             return _context.Customers.Any(e => e.CustomerId == id);
+        }
+
+        private static CustomerDTO customerToDTO(Customer customer)
+        {
+            var customerDTO = new CustomerDTO
+            {
+                CustomerId = customer.CustomerId,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                Email = customer.Email
+            };
+
+            return customerDTO;
         }
     }
 }

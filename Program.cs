@@ -15,7 +15,6 @@ namespace ShopMart
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("I got to Program.cs >?<?>?>>>?><<>??><>??><>??>>>>??>>?><>><><><>>");
             var host = CreateHostBuilder(args).Build();
 
             CreateDbIfNotExists(host);
