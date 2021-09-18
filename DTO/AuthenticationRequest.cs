@@ -3,8 +3,7 @@ namespace ShopMart.DTO
 {
     public class AuthenticationRequest
     {
-        public AuthenticationRequest()
-        {
-        }
+        public string Email { get; set; }
+        public string Password { get; set; }
     }
 }

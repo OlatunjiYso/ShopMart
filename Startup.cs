@@ -14,6 +14,9 @@ using Microsoft.OpenApi.Models;
 using ShopMart.Models;
 using ShopMart.Data;
 using Microsoft.EntityFrameworkCore;
+using ShopMart.Interface;
+using ShopMart.Authorization;
+using ShopMart.Services;
 
 namespace ShopMart
 {
@@ -29,14 +32,19 @@ namespace ShopMart
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            
             services.AddDbContext<ShopMartContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-                services.AddDatabaseDeveloperPageExceptionFilter();
-            // services.AddSwaggerGen(c =>
-            // {
-            //     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ShopMart", Version = "v1" });
-            // });
+            services.AddDatabaseDeveloperPageExceptionFilter();
+            services.AddCors();
+            services.AddControllers();
+
+            // configure strongly typed settings objects
+            //services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
+
+            // configure DI for application services
+            services.AddScoped<IJwtUtils, JwtUtils>();
+            services.AddScoped<ICustomerService, CustomerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,13 +53,17 @@ namespace ShopMart
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                // app.UseSwagger();
-                // app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ShopMart v1"));
             }
 
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            // global cors policy
+            app.UseCors(x => x
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
 
             app.UseAuthorization();
 

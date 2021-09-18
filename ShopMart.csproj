@@ -13,12 +13,22 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="5.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="DTO\" />
+    <None Remove="Services\" />
+    <None Remove="Interface\" />
+    <None Remove="BCrypt.Net-Next" />
+    <None Remove="Authorization\" />
+    <None Remove="Helpers\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DTO\" />
+    <Folder Include="Services\" />
+    <Folder Include="Interface\" />
+    <Folder Include="Authorization\" />
+    <Folder Include="Helpers\" />
   </ItemGroup>
 </Project>

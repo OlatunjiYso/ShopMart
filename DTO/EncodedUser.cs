@@ -1,10 +1,9 @@
 ﻿using System;
 namespace ShopMart.DTO
 {
-    public class TokenClaim
+    public class EncodedUser
     {
-        public TokenClaim()
-        {
-        }
+        public long Id { get; set; }
+        public string Email { get; set; }
     }
 }

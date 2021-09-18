@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using ShopMart.Data;
 using ShopMart.DTO;
+using ShopMart.Helpers;
+using ShopMart.Interface;
 using ShopMart.Models;
 
 namespace ShopMart.Controllers
@@ -16,105 +19,55 @@ namespace ShopMart.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly ShopMartContext _context;
+        private ICustomerService _customerService;
+        private readonly AppSettings _appSettings;
 
-        public CustomerController(ShopMartContext context)
+        public CustomerController(ICustomerService customerService, IOptions<AppSettings> appSettings)
         {
-            _context = context;
+            _customerService = customerService;
+            _appSettings = appSettings.Value;
         }
 
         // GET: api/Customer
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CustomerDTO>>> GetCustomers()
+        public ActionResult GetCustomers()
         {
-            return await _context.Customers
-                .Select(x => customerToDTO(x))
-                .ToListAsync();
+            var customers = _customerService.GetAll();
+            return Ok(customers);
         }
 
         // GET: api/Customer/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<CustomerDTO>> GetCustomer(long id)
+        public ActionResult GetCustomer(long id)
         {
-            var customer = await _context.Customers.FindAsync(id);
-
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            return customerToDTO(customer);
+            var customer = _customerService.GetById(id);
+            return Ok(customer);
         }
 
         // PUT: api/Customer/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(long id, CustomerDTO customerDTO)
+        public  IActionResult PutCustomer(long id, UpdateCustomerRequest customer)
         {
-            if (id != customerDTO.CustomerId)
-            {
-                return BadRequest();
-            }
-
-            // _context.Entry(customer).State = EntityState.Modified;
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            customer.FirstName = customerDTO.FirstName;
-            customer.LastName = customerDTO.LastName;
-            customer.Email = customerDTO.Email;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CustomerExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            _customerService.UpdateCustomer(id, customer);
+            return Ok(new { message = "User updated successfully" });
         }
 
         // POST: api/Customer
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<CustomerDTO>> PostCustomer(Customer customer)
+        public ActionResult PostCustomer(RegistrationRequest customer)
         {
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customerToDTO(customer));
-
-        //    return CreatedAtAction(
-        //nameof(GetCustomer),
-        //new { customerId = customer.CustomerId },
-        //customerToDTO(customer));
+            _customerService.Register(customer);
+            return Ok(new { message = "Registration successful" });
         }
 
         // DELETE: api/Customer/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(long id)
+        public IActionResult DeleteCustomer(long id)
         {
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            _customerService.DeleteCustomer(id);
+            return Ok(new { message = " Customer deleted successfully" });
         }
 
         private bool CustomerExists(long id)
