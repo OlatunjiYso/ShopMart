@@ -29,7 +29,11 @@ namespace ShopMart.Authorization
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim("Id", customer.CustomerId.ToString(), "Email", customer.Email) }),
+                Subject = new ClaimsIdentity(new Claim[] {
+                    new Claim("UserRole", "Administrator"),
+                    new Claim("Email", customer.Email),
+                    new Claim("Id", customer.CustomerId.ToString())
+                }),
                 Expires = DateTime.UtcNow.AddDays(14),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -68,9 +72,10 @@ namespace ShopMart.Authorization
                 // return customer claim from JWT token if validation successful
                 return encodedUser;
             }
-            catch
+            catch(Exception e)
             {
                 // return null if validation fails
+                string message = e.Message;
                 return null;
             }
 
