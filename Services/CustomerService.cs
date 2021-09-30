@@ -29,12 +29,14 @@ namespace ShopMart.Services
         public AuthenticationResponse Authenticate(AuthenticationRequest request)
         {
             AuthenticationResponse authResponse = new AuthenticationResponse();
-            var customer = _context.Customers.SingleOrDefault(x => x.Email == request.Email);
+            var customer = _context.Customers.FirstOrDefault(x => x.Email == request.Email);
 
             //validate
-            if(customer == null | BCryptNet.Verify(request.Password, customer.Password))
+            if (customer == null || !BCryptNet.Verify(request.Password, customer.Password))
             {
-                throw new ApplicationException("Invalid Email or password");
+                authResponse.Message = "Email or password Incorrect";
+                authResponse.Success = false;
+                return authResponse;
             }
 
             // Successful authentication
@@ -60,6 +62,8 @@ namespace ShopMart.Services
         public CustomerDTO GetById(long id)
         {
             var customer = GetSingleCustomer(id);
+            if (customer == null)
+                return null;
             return CustomerToDTO(customer);
         }
 
@@ -69,9 +73,12 @@ namespace ShopMart.Services
          */
         public RegistrationResponse Register(RegistrationRequest request)
         {
-            // validate
+            var response = new RegistrationResponse();
+            // validation
             if (_context.Customers.Any(x => x.Email == request.Email))
-                throw new AppException("Email '" + request.Email + "' is already taken");
+            {  response.HasConflict = true;
+                return response;
+            }
 
             var customer = new Customer()
             {
@@ -88,7 +95,6 @@ namespace ShopMart.Services
             _context.SaveChanges();
             var newlySavedCustomer = _context.Customers.First(x => x.Email == request.Email);
 
-            var response = new RegistrationResponse();
             response.Message = "Registration successful";
             response.Success = true;
             response.JwtToken = _jwtUtils.GenerateToken(newlySavedCustomer);
@@ -135,7 +141,7 @@ namespace ShopMart.Services
         /*
          * @desc - Method to convert Cutomer Object to CustomerDTO
          */
-        public CustomerDTO CustomerToDTO(Customer customer)
+        private static CustomerDTO CustomerToDTO(Customer customer)
         {
             return new CustomerDTO()
             {
@@ -151,8 +157,6 @@ namespace ShopMart.Services
         private Customer GetSingleCustomer(long id)
         {
             var customer = _context.Customers.Find(id);
-            if (customer == null)
-                throw new KeyNotFoundException("User not found");
             return customer;
         }
 
