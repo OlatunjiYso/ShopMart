@@ -31,17 +31,17 @@ namespace ShopMart.Controllers
 
         // GET: api/Customer
         [HttpGet]
-        public ActionResult GetCustomers()
+        public async Task<ActionResult> GetCustomers()
         {
-            var customers = _customerService.GetAll();
+            var customers = await _customerService.GetAll();
             return Ok(customers);
         }
 
         // GET: api/Customer/5
         [HttpGet("{id}")]
-        public ActionResult GetCustomer(long id)
+        public async Task<ActionResult> GetCustomer(long id)
         {
-            var customer = _customerService.GetById(id);
+            var customer = await _customerService.GetById(id);
             if (customer == null)
                 return NotFound("Customer with specified ID doesnt exist.");
             return Ok(customer);
@@ -49,17 +49,17 @@ namespace ShopMart.Controllers
 
         // PUT: api/Customer/5
         [HttpPut("{id}")]
-        public  IActionResult PutCustomer(long id, UpdateCustomerRequest customer)
+        public async Task<ActionResult> PutCustomer(long id, UpdateCustomerRequest customer)
         {
-            _customerService.UpdateCustomer(id, customer);
+            await _customerService.UpdateCustomer(id, customer);
             return Ok(new { message = "User updated successfully" });
         }
 
         [AllowAnonymous]
         [HttpPost("registration")]
-        public ActionResult<RegistrationResponse> RegisterCustomer(RegistrationRequest customer)
+        public async Task<ActionResult<RegistrationResponse>> RegisterCustomer(RegistrationRequest customer)
         {
-            RegistrationResponse regResponse = _customerService.Register(customer);
+            RegistrationResponse regResponse = await _customerService.Register(customer);
             if (regResponse.HasConflict)
             { return Conflict("Email: " + customer.Email + " has been taken already"); }
             return Ok(regResponse);
@@ -67,9 +67,9 @@ namespace ShopMart.Controllers
 
         [AllowAnonymous]
         [HttpPost("auth")]
-        public ActionResult<AuthenticationResponse> AuthenticateCustomer(AuthenticationRequest customer)
+        public async Task<ActionResult<AuthenticationResponse>> AuthenticateCustomer(AuthenticationRequest customer)
         {
-            AuthenticationResponse authResponse = _customerService.Authenticate(customer);
+            AuthenticationResponse authResponse = await _customerService.Authenticate(customer);
             if (!authResponse.Success)
             { return Unauthorized(authResponse); }
 
@@ -78,10 +78,10 @@ namespace ShopMart.Controllers
 
         // DELETE: api/Customer/5
         [HttpDelete("{id}")]
-        public IActionResult DeleteCustomer(long id)
+        public async Task<ActionResult> DeleteCustomer(long id)
         {
             _customerService.DeleteCustomer(id);
-            return Ok(new { message = " Customer deleted successfully" });
+             return Ok(new { message = " Customer deleted successfully" });
         }
     }
 }

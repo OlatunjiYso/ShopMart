@@ -33,8 +33,12 @@ namespace ShopMart
        
         public void ConfigureServices(IServiceCollection services)
         {
+            //services.AddDbContext<ShopMartContext>(options =>
+            //    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+
             services.AddDbContext<ShopMartContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient);
             services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddCors();
             services.AddControllers();
@@ -42,7 +46,8 @@ namespace ShopMart
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
             // configure DI for application services
             services.AddScoped<IJwtUtils, JwtUtils>();
-            services.AddScoped<ICustomerService, CustomerService>();
+            //services.AddScoped<ICustomerService, CustomerService>();
+            services.AddTransient<ICustomerService, CustomerService>();
         }
 
 

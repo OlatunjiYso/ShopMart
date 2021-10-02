@@ -8,6 +8,7 @@ using BCryptNet = BCrypt.Net.BCrypt;
 using ShopMart.Models;
 using Microsoft.EntityFrameworkCore;
 using ShopMart.Helpers;
+using System.Threading.Tasks;
 
 namespace ShopMart.Services
 {
@@ -26,42 +27,53 @@ namespace ShopMart.Services
         /*
          * @desc - Method to Authenticate a customer
          */
-        public AuthenticationResponse Authenticate(AuthenticationRequest request)
+        public async Task<AuthenticationResponse> Authenticate(AuthenticationRequest request)
         {
             AuthenticationResponse authResponse = new AuthenticationResponse();
-            var customer = _context.Customers.FirstOrDefault(x => x.Email == request.Email);
+            var customer = await _context.Customers.FirstOrDefaultAsync(x => x.Email == request.Email);
 
             //validate
-            if (customer == null || !BCryptNet.Verify(request.Password, customer.Password))
+            try
             {
-                authResponse.Message = "Email or password Incorrect";
-                authResponse.Success = false;
+                if (customer == null || !BCryptNet.Verify(request.Password, customer.Password))
+                {
+                    authResponse.Message = "Email or password Incorrect";
+                    authResponse.Success = false;
+                    return authResponse;
+                }
+
+                // Successful authentication
+                authResponse.JwtToken = _jwtUtils.GenerateToken(customer);
+                authResponse.Message = "Authentication successful";
+                authResponse.Success = true;
+                return authResponse;
+
+            }
+            catch(Exception ex)
+            {
+                authResponse.JwtToken = "Could be an unencripted test password";
+                authResponse.Message = ex.Message;
                 return authResponse;
             }
-
-            // Successful authentication
-            authResponse.JwtToken = _jwtUtils.GenerateToken(customer);
-            authResponse.Message = "Authentication successful";
-            authResponse.Success = true;
-            return authResponse;
+            
         }
 
 
         /**
-         * @desc - Methods that fetches all customer
+         * @desc - Service Method that fetches all customer
          */
-        public IEnumerable<CustomerDTO> GetAll()
+        public async Task<IEnumerable<CustomerDTO>> GetAll()
         {
-            return _context.Customers.Select(x => CustomerToDTO(x)).ToList();
+            return await _context.Customers.Select(x => CustomerToDTO(x)).ToListAsync();
         }
 
 
         /*
          * @desc - Service method to find a single customer.
          */
-        public CustomerDTO GetById(long id)
+        public async Task<CustomerDTO> GetById(long id)
         {
-            var customer = GetSingleCustomer(id);
+            var customer = await GetSingleCustomer(id);
             if (customer == null)
                 return null;
             return CustomerToDTO(customer);
@@ -69,13 +81,13 @@ namespace ShopMart.Services
 
 
         /*
-         * @desc - Method that Creates a new user
+         * @desc - Service Method that registers a new user
          */
-        public RegistrationResponse Register(RegistrationRequest request)
+        public async Task<RegistrationResponse> Register(RegistrationRequest request)
         {
             var response = new RegistrationResponse();
             // validation
-            if (_context.Customers.Any(x => x.Email == request.Email))
+            if ( await _context.Customers.AnyAsync(x => x.Email == request.Email))
             {  response.HasConflict = true;
                 return response;
             }
@@ -91,9 +103,9 @@ namespace ShopMart.Services
             customer.Password = BCryptNet.HashPassword(request.Password);
 
             // save user
-            _context.Customers.Add(customer);
-            _context.SaveChanges();
-            var newlySavedCustomer = _context.Customers.First(x => x.Email == request.Email);
+            await _context.Customers.AddAsync(customer);
+            await _context.SaveChangesAsync();
+            var newlySavedCustomer = await _context.Customers.FirstAsync(x => x.Email == request.Email);
 
             response.Message = "Registration successful";
             response.Success = true;
@@ -104,10 +116,10 @@ namespace ShopMart.Services
         /*
          * @desc - Method to update a customer.
          */
-        public CustomerDTO UpdateCustomer(long id, UpdateCustomerRequest request)
+        public async Task<CustomerDTO> UpdateCustomer(long id, UpdateCustomerRequest request)
         {
-            var customer = GetSingleCustomer(id);
-            if (!string.IsNullOrEmpty(request.Email) && _context.Customers.Any(x => x.Email == request.Email))
+            var customer = await GetSingleCustomer(id);
+            if (!string.IsNullOrEmpty(request.Email) && await _context.Customers.AnyAsync(x => x.Email == request.Email))
                 throw new AppException("The supplied Email is already taken");
             if (!string.IsNullOrEmpty(request.Password))
                 customer.Password = request.Password;
@@ -119,7 +131,7 @@ namespace ShopMart.Services
                 customer.LastName = request.LastName;
 
             _context.Customers.Update(customer);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return CustomerToDTO(customer);
 
@@ -127,12 +139,12 @@ namespace ShopMart.Services
         /*
          * @desc - Method to delete a customer.
          */
-        public void DeleteCustomer(long id)
+        public async void DeleteCustomer(long id)
         {
-            var customer = GetSingleCustomer(id);
+            var customer = await GetSingleCustomer(id);
 
             _context.Customers.Remove(customer);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
 
@@ -154,9 +166,9 @@ namespace ShopMart.Services
         /*
          * @desc - HelperMethod that finds a single customer.
          */
-        private Customer GetSingleCustomer(long id)
+        private async Task<Customer> GetSingleCustomer(long id)
         {
-            var customer = _context.Customers.Find(id);
+            var customer = await _context.Customers.FindAsync(id);
             return customer;
         }
 
